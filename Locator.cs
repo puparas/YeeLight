@@ -20,20 +20,31 @@ namespace YeeLight
             SearchDevices();
             SendBroadcastMessage();
         }
+
         private async void SearchDevices()
         {
-            var result = await client.ReceiveAsync();
-            string dataString = Encoding.UTF8.GetString(result.Buffer);
-            Dictionary<string, string> deviceParams = Device.GetParamsFormString(dataString);
-            var item = devices.Where(i => i["Location"].Contains(deviceParams["Location"]))
-                     .FirstOrDefault();
-            if (item == null)
+            try
             {
-                new Device(deviceParams);
-                devices.Add(deviceParams);
+
+                var result = await client.ReceiveAsync();
+                string dataString = Encoding.UTF8.GetString(result.Buffer);
+                Dictionary<string, string> deviceParams = Device.GetParamsFormString(dataString);
+                var item = devices.Where(i => i["Location"].Contains(deviceParams["Location"]))
+                         .FirstOrDefault();
+                if (item == null)
+                {
+                    new Device(deviceParams);
+                    devices.Add(deviceParams);
+                }
+                SearchDevices();
             }
-            SearchDevices();
+            catch (System.ObjectDisposedException e)
+            {
+                throw e;
+            }
+
         }
+
         private void SendBroadcastMessage()
         {
             byte[] data = Encoding.UTF8.GetBytes(MSGSTRING);

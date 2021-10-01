@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Win32;
+using System;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -9,14 +10,12 @@ namespace YeeLight
         Locator loc;
         public static NotifyIcon Notifier { get { return notifier; } }
         private static NotifyIcon notifier;
-
         public Form1()
         {
             InitializeComponent();
             notifier = this.notifyIcon;
             loc = new Locator();
             loc.Find();
-
         }
 
 
@@ -37,7 +36,7 @@ namespace YeeLight
         }
         private void research_Click(object sender, EventArgs e)
         {
-            loc.Find();
+            Application.Restart();
         }
         private void Form1_Resize(object sender, EventArgs e)
         {
@@ -56,7 +55,6 @@ namespace YeeLight
             notifyIcon.Visible = false;
             loc.Find();
         }
-
 
 
     }

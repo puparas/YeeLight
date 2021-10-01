@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using Microsoft.Win32;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -23,12 +24,13 @@ namespace YeeLight
         public Device(Dictionary<string, string> deviceParams)
         {
             uiGenerator = new MakeUi(this);
-            Tclient = new TcpClient();
             this.deviceParams = deviceParams;
             ParseDeviceLocation();
-            Tclient.Connect(locationDevice[0], Int32.Parse(locationDevice[1]));
-            StartListener();
             uiGenerator.MakeUiByParams(deviceParams);
+            TcpConnect();
+
+
+
         }
 
         public static Dictionary<string, string> GetParamsFormString(string deviceString)
@@ -48,13 +50,23 @@ namespace YeeLight
 
         private async void StartListener()
         {
-            byte[] buffer = new byte[500];
-            NetworkStream stream = Tclient.GetStream();
-            int byteCount = await stream.ReadAsync(buffer, 0, buffer.Length);
-            string request = Encoding.UTF8.GetString(buffer, 0, byteCount);
-            Debug.WriteLine(request);
-            ParseRequest(request);
-            StartListener();
+           
+            try
+            {
+                byte[] buffer = new byte[500];
+                NetworkStream stream = Tclient.GetStream();
+                int byteCount = await stream.ReadAsync(buffer, 0, buffer.Length);
+                string request = Encoding.UTF8.GetString(buffer, 0, byteCount);
+                Debug.WriteLine(request);
+                ParseRequest(request);
+                StartListener();
+            }
+            catch
+            {
+                return;
+
+            }
+
         }
 
         private void ParseRequest(string request)
@@ -74,14 +86,11 @@ namespace YeeLight
                     MessageBox.Show("...и команда твоя тоже", "Ты инвалид...");
                 }
             }
-            catch (JsonReaderException jex)
+            catch
             {
-                //MessageBox.Show(jex.ToString(), "Твой json инвалид...");
+
             }
-            catch (Exception jex)
-            {
-                //MessageBox.Show(jex.ToString(), "Твой json инвалид...");
-            }
+            
 
 
 
@@ -215,10 +224,15 @@ namespace YeeLight
                 deviceParams[param.Key] = param.Value.ToString();
             }
         }
+
         private void SendCommands(string data)
         {
             try
             {
+                if (!Tclient.Connected)
+                {
+                    TcpConnect();
+                }
                 byte[] dataBytes = Encoding.UTF8.GetBytes(data);
                 NetworkStream stream = Tclient.GetStream();
                 stream.Write(dataBytes, 0, dataBytes.Length);
@@ -230,6 +244,22 @@ namespace YeeLight
             catch (SocketException e)
             {
                 MessageBox.Show(e.ToString(), "SendCommands говорит: Ты инвалид...");
+            }
+
+        }
+
+        private void TcpConnect()
+        {
+            try
+            {
+                Tclient = new TcpClient();
+                Tclient.Connect(locationDevice[0], Int32.Parse(locationDevice[1]));
+                StartListener();
+            }
+            catch (Exception e)
+            {
+
+                MessageBox.Show(e.ToString(), "");
             }
 
         }
